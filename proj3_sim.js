@@ -122,5 +122,209 @@ function initMesh() {
  * KEY function: simulate one time-step using Euler's method
  */
 function simulate(stepSize) {
-    // FIX ME
+
+    // code added
+    let n = meshResolution;
+    let Lstructural = 4/(n-1);
+    let Lshear = 4*Math.sqrt(2)/(n-1);
+    let Lflexion = 8/(n-1);
+
+    var i, j;
+    var Fs = [];
+    for(i=0; i<n; ++i)
+    {
+        for(j=0; j<n; ++j)
+        {
+            // step 0. compute the accumulated force
+            var Fspring = vec3.create([0, 0, 0]);
+            var Fgravity = vec3.create([0, 0, 0]);
+            var Fdamping = vec3.create([0, 0, 0]);
+            var Ffliud = vec3.create([0, 0, 0]);
+            var F = vec3.create([0, 0, 0]);
+
+
+            // Spring Structural
+            if(i-1>=0)
+            {
+                var tmp = vec3.create([0, 0, 0]);
+                vec3.subtract(getPosition(i, j), getPosition(i-1, j), tmp);
+                var scale = K[0]*(Lstructural-vec3.length(tmp));
+                var Ftmp = vec3.create([0, 0, 0]);
+                vec3.normalize(tmp, Ftmp);
+                vec3.scale(Ftmp, scale, Ftmp);
+                vec3.add(Fspring, Ftmp);
+            }
+
+            if(j+1<n)
+            {
+                var tmp = vec3.create([0, 0, 0]);
+                vec3.subtract(getPosition(i, j), getPosition(i, j+1), tmp);
+                var scale = K[0]*(Lstructural-vec3.length(tmp));
+                var Ftmp = vec3.create([0, 0, 0]);
+                vec3.normalize(tmp, Ftmp);
+                vec3.scale(Ftmp, scale, Ftmp);
+                vec3.add(Fspring, Ftmp);
+            }
+
+            if(i+1<n)
+            {
+                var tmp = vec3.create([0, 0, 0]);
+                vec3.subtract(getPosition(i, j), getPosition(i+1, j), tmp);
+                var scale = K[0]*(Lstructural-vec3.length(tmp));
+                var Ftmp = vec3.create([0, 0, 0]);
+                vec3.normalize(tmp, Ftmp);
+                vec3.scale(Ftmp, scale, Ftmp);
+                vec3.add(Fspring, Ftmp);
+            }
+
+            if(j-1>=0)
+            {
+                var tmp = vec3.create([0, 0, 0]);
+                vec3.subtract(getPosition(i, j), getPosition(i, j-1), tmp);
+                var scale = K[0]*(Lstructural-vec3.length(tmp));
+                var Ftmp = vec3.create([0, 0, 0]);
+                vec3.normalize(tmp, Ftmp);
+                vec3.scale(Ftmp, scale, Ftmp);
+                vec3.add(Fspring, Ftmp);
+                // alert(Fspring);
+            }
+
+            // Spring Shear
+            if(i-1>=0 && j-1>=0)
+            {
+                var tmp = vec3.create([0, 0, 0]);
+                vec3.subtract(getPosition(i, j), getPosition(i-1, j-1), tmp);
+                var scale = K[1]*(Lshear-vec3.length(tmp));
+                var Ftmp = vec3.create([0, 0, 0]);
+                vec3.normalize(tmp, Ftmp);
+                vec3.scale(Ftmp, scale, Ftmp);
+                vec3.add(Fspring, Ftmp);
+            }
+
+            if(i-1>=0 && j+1<n)
+            {
+                var tmp = vec3.create([0, 0, 0]);
+                vec3.subtract(getPosition(i, j), getPosition(i-1, j+1), tmp);
+                var scale = K[1]*(Lshear-vec3.length(tmp));
+                var Ftmp = vec3.create([0, 0, 0]);
+                vec3.normalize(tmp, Ftmp);
+                vec3.scale(Ftmp, scale, Ftmp);
+                vec3.add(Fspring, Ftmp);
+            }
+
+            if(i+1<n && j+1<n)
+            {
+                var tmp = vec3.create([0, 0, 0]);
+                vec3.subtract(getPosition(i, j), getPosition(i+1, j+1), tmp);
+                var scale = K[1]*(Lshear-vec3.length(tmp));
+                var Ftmp = vec3.create([0, 0, 0]);
+                vec3.normalize(tmp, Ftmp);
+                vec3.scale(Ftmp, scale, Ftmp);
+                vec3.add(Fspring, Ftmp);
+            }
+
+            if(i+1<n && j-1>=0)
+            {
+                var tmp = vec3.create([0, 0, 0]);
+                vec3.subtract(getPosition(i, j), getPosition(i+1, j-1), tmp);
+                var scale = K[1]*(Lshear-vec3.length(tmp));
+                var Ftmp = vec3.create([0, 0, 0]);
+                vec3.normalize(tmp, Ftmp);
+                vec3.scale(Ftmp, scale, Ftmp);
+                vec3.add(Fspring, Ftmp);
+            }
+
+            // Spring Flexion
+            if(i-2>=0)
+            {
+                var tmp = vec3.create([0, 0, 0]);
+                vec3.subtract(getPosition(i, j), getPosition(i-2, j), tmp);
+                var scale = K[2]*(Lshear-vec3.length(tmp));
+                var Ftmp = vec3.create([0, 0, 0]);
+                vec3.normalize(tmp, Ftmp);
+                vec3.scale(Ftmp, scale, Ftmp);
+                vec3.add(Fspring, Ftmp);
+            }
+
+            if(j+2<n)
+            {
+                var tmp = vec3.create([0, 0, 0]);
+                vec3.subtract(getPosition(i, j), getPosition(i, j+2), tmp);
+                var scale = K[2]*(Lshear-vec3.length(tmp));
+                var Ftmp = vec3.create([0, 0, 0]);
+                vec3.normalize(tmp, Ftmp);
+                vec3.scale(Ftmp, scale, Ftmp);
+                vec3.add(Fspring, Ftmp);
+            }
+
+            if(i+2<n)
+            {
+                var tmp = vec3.create([0, 0, 0]);
+                vec3.subtract(getPosition(i, j), getPosition(i+2, j), tmp);
+                var scale = K[2]*(Lshear-vec3.length(tmp));
+                var Ftmp = vec3.create([0, 0, 0]);
+                vec3.normalize(tmp, Ftmp);
+                vec3.scale(Ftmp, scale, Ftmp);
+                vec3.add(Fspring, Ftmp);
+            }
+
+            if(j-2>=0)
+            {
+                var tmp = vec3.create([0, 0, 0]);
+                vec3.subtract(getPosition(i, j), getPosition(i, j-2), tmp);
+                var scale = K[2]*(Lshear-vec3.length(tmp));
+                var Ftmp = vec3.create([0, 0, 0]);
+                vec3.normalize(tmp, Ftmp);
+                vec3.scale(Ftmp, scale, Ftmp);
+                vec3.add(Fspring, Ftmp);
+            }
+
+
+            // alert(Fspring);
+
+            Fgravity[1] = -9.8*mass;
+
+            vec3.scale(getVelocity(i, j), -Cd, Fdamping);
+
+            var VecTmp = vec3.create([0, 0, 0]);
+            vec3.subtract(uf, getVelocity(i, j), VecTmp);
+            var ScaTmp = Cv*vec3.dot(getNormal(i, j), VecTmp);
+            vec3.scale(VecTmp, ScaTmp, Ffliud);
+
+            vec3.add(Fspring, Fgravity, F);
+            vec3.add(Fdamping, F, F);
+            vec3.add(Ffliud, F, F);
+
+            // alert("spring=" + Fspring.toString()+"gravity=" + Fgravity.toString()+"damping="+Fdamping.toString()+"fluid="+Ffliud.toString());
+
+            Fs.push(F);
+        }
+    }
+
+    for(i=0; i<n; ++i)
+    {
+        for(j=0; j<n; ++j)
+        {
+            if(i==n-1 && j==0) continue;
+            if(i==n-1 && j==n-1) continue;
+
+            var F = Fs[i*n+j];
+            // alert(F);
+
+            // Euler iteration
+            var tmp1 = vec3.create([0, 0, 0]);
+
+            var a = vec3.create([0, 0, 0]);
+            vec3.scale(F, 1/mass, a);
+
+            vec3.scale(a, stepSize, a);
+            vec3.add(getVelocity(i, j), a, tmp1);
+            setVelocity(i, j, tmp1);
+
+            var tmp2 = vec3.create([0, 0, 0]);
+            vec3.scale(getVelocity(i, j), stepSize, tmp2);
+            vec3.add(getPosition(i, j), tmp2, tmp2);
+            setPosition(i, j, tmp2);
+        }
+    }
 }
