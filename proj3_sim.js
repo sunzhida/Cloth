@@ -7,6 +7,7 @@ var meshResolution;
 var mass;
 var vertexPosition, vertexNormal;
 var vertexVelocity;
+var textureCoordinates;
 
 // Spring properties
 var K, restLength; 
@@ -19,6 +20,12 @@ var uf, Cv;
 /*
  * Getters and setters
  */
+
+function setTextureCoord(i, j, x) {
+    var id = i*meshResolution + j;
+    textureCoordinates[2*id] = x[0]; textureCoordinates[2*id + 1] = x[1];
+}
+
 function getPosition(i, j) {
     var id = i*meshResolution + j;
     return vec3.create([vertexPosition[3*id], vertexPosition[3*id + 1], vertexPosition[3*id + 2]]);
@@ -77,11 +84,13 @@ function computeNormals() {
 
 
 var clothIndex, clothWireIndex;
-function initMesh() {
+function initMesh()
+{
     var i, j, k;
 
     vertexPosition = new Array(meshResolution*meshResolution*3);
     vertexNormal = new Array(meshResolution*meshResolution*3);
+    textureCoordinates = new Array(meshResolution*meshResolution*2);
     clothIndex = new Array((meshResolution - 1)*(meshResolution - 1)*6);
     clothWireIndex = [];
 
@@ -91,7 +100,9 @@ function initMesh() {
     restLength[2] = 2.0*restLength[0];
 
     for ( i = 0; i < meshResolution; ++i )
-        for ( j = 0; j < meshResolution; ++j ) {
+        for ( j = 0; j < meshResolution; ++j )
+        {
+            setTextureCoord(i, j, [1.0*i/(meshResolution - 1), 1.0*j/(meshResolution - 1)]);
             setPosition(i, j, [-2.0 + 4.0*j/(meshResolution - 1), -2.0 + 4.0*i/(meshResolution - 1), 0.0]);
             setVelocity(i, j, vec3.create());
 
@@ -106,7 +117,8 @@ function initMesh() {
 
     k = 0;
     for ( i = 0; i < meshResolution - 1; ++i )
-        for ( j = 0; j < meshResolution - 1; ++j ) {
+        for ( j = 0; j < meshResolution - 1; ++j )
+        {
             clothIndex[6*k] = i*meshResolution + j;
             clothIndex[6*k + 1] = i*meshResolution + j + 1;
             clothIndex[6*k + 2] = (i + 1)*meshResolution + j + 1;
@@ -121,7 +133,8 @@ function initMesh() {
 /*
  * KEY function: simulate one time-step using Euler's method
  */
-function simulate(stepSize) {
+function simulate(stepSize)
+{
 
     // code added
     let n = meshResolution;
@@ -239,7 +252,7 @@ function simulate(stepSize) {
             {
                 var tmp = vec3.create([0, 0, 0]);
                 vec3.subtract(getPosition(i, j), getPosition(i-2, j), tmp);
-                var scale = K[2]*(Lshear-vec3.length(tmp));
+                var scale = K[2]*(Lflexion-vec3.length(tmp));
                 var Ftmp = vec3.create([0, 0, 0]);
                 vec3.normalize(tmp, Ftmp);
                 vec3.scale(Ftmp, scale, Ftmp);
@@ -250,7 +263,7 @@ function simulate(stepSize) {
             {
                 var tmp = vec3.create([0, 0, 0]);
                 vec3.subtract(getPosition(i, j), getPosition(i, j+2), tmp);
-                var scale = K[2]*(Lshear-vec3.length(tmp));
+                var scale = K[2]*(Lflexion-vec3.length(tmp));
                 var Ftmp = vec3.create([0, 0, 0]);
                 vec3.normalize(tmp, Ftmp);
                 vec3.scale(Ftmp, scale, Ftmp);
@@ -261,7 +274,7 @@ function simulate(stepSize) {
             {
                 var tmp = vec3.create([0, 0, 0]);
                 vec3.subtract(getPosition(i, j), getPosition(i+2, j), tmp);
-                var scale = K[2]*(Lshear-vec3.length(tmp));
+                var scale = K[2]*(Lflexion-vec3.length(tmp));
                 var Ftmp = vec3.create([0, 0, 0]);
                 vec3.normalize(tmp, Ftmp);
                 vec3.scale(Ftmp, scale, Ftmp);
@@ -272,30 +285,29 @@ function simulate(stepSize) {
             {
                 var tmp = vec3.create([0, 0, 0]);
                 vec3.subtract(getPosition(i, j), getPosition(i, j-2), tmp);
-                var scale = K[2]*(Lshear-vec3.length(tmp));
+                var scale = K[2]*(Lflexion-vec3.length(tmp));
                 var Ftmp = vec3.create([0, 0, 0]);
                 vec3.normalize(tmp, Ftmp);
                 vec3.scale(Ftmp, scale, Ftmp);
                 vec3.add(Fspring, Ftmp);
             }
 
-
-            // alert(Fspring);
-
             Fgravity[1] = -9.8*mass;
+            vec3.add(Fgravity, F, F);
 
             vec3.scale(getVelocity(i, j), -Cd, Fdamping);
-
             var VecTmp = vec3.create([0, 0, 0]);
             vec3.subtract(uf, getVelocity(i, j), VecTmp);
             var ScaTmp = Cv*vec3.dot(getNormal(i, j), VecTmp);
-            vec3.scale(VecTmp, ScaTmp, Ffliud);
+            vec3.scale(getNormal(i, j), ScaTmp, Ffliud);
 
             vec3.add(Fspring, Fgravity, F);
             vec3.add(Fdamping, F, F);
             vec3.add(Ffliud, F, F);
 
-            // alert("spring=" + Fspring.toString()+"gravity=" + Fgravity.toString()+"damping="+Fdamping.toString()+"fluid="+Ffliud.toString());
+            // test: add wind
+            var wind = vec3.create([9.8*mass/2, 0, 9.8*mass/2]);
+            vec3.add(wind, F, F);
 
             Fs.push(F);
         }
@@ -308,12 +320,9 @@ function simulate(stepSize) {
             if(i==n-1 && j==0) continue;
             if(i==n-1 && j==n-1) continue;
 
-            var F = Fs[i*n+j];
-            // alert(F);
-
             // Euler iteration
+            var F = Fs[i*n+j];
             var tmp1 = vec3.create([0, 0, 0]);
-
             var a = vec3.create([0, 0, 0]);
             vec3.scale(F, 1/mass, a);
 
@@ -327,8 +336,4 @@ function simulate(stepSize) {
             setPosition(i, j, tmp2);
         }
     }
-}
-
-function shader() {
-
 }

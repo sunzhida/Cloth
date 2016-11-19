@@ -34,18 +34,23 @@
 
     attribute vec3 aVertexPosition;     // Vertex position in object space
     attribute vec3 aVertexNormal;       // Vertex normal in object space
+    attribute vec2 aTextureCoord;
 
     varying vec3 vPosition;             // Vertex position (camera space)
     varying vec3 vNormal;               // Vertex normal (camera space)
+    varying highp vec2 vTextureCoord;
 
-    void main(void) {
+    void main(void)
+    {
         vec4 camSpacePosition = uMVMatrix * vec4(aVertexPosition, 1.0);
         vPosition = vec3(camSpacePosition);
 
-        gl_Position = uPMatrix * camSpacePosition;        
+        gl_Position = uPMatrix * camSpacePosition;
 
         vec4 camSpaceNormal = uNMatrix * vec4(aVertexNormal, 0.0);
         vNormal = vec3(camSpaceNormal);
+
+        vTextureCoord = aTextureCoord;
     }
 </script>
 
@@ -54,10 +59,14 @@
     precision mediump float;
 
     uniform vec3 uLightPos;             // Light position in camera space
+    uniform sampler2D uSampler;
+
     varying vec3 vPosition;             // Fragment position (camera space)
     varying vec3 vNormal;               // Fragment normal (camera space)
+    varying highp vec2 vTextureCoord;
 
-    void main(void) {
+    void main(void)
+    {
         vec3 vLight = uLightPos - vPosition;
         float dist = length(vLight);
         vLight = vLight/dist;
@@ -75,6 +84,7 @@
         vec3 I = 5.0*(diffClr*diff + spec)/(5.0 + 0.2*dist*dist) + diffClr*ambient;
 
         gl_FragColor = vec4(I, 1.0);
+        // gl_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
     }
 </script>
 </head>
@@ -82,7 +92,7 @@
 
 <!-- HTML contents -->
 <body>
-    <h1>CS114 Project 3: Mass-Spring System</h1>
+    <h1>COMP 5411 Final Project: Cloth Simulation on GPU</h1>
 
     <div style="margin-top:10px; float:left">
         <canvas id="canvas0" style="border:none;" width="600" height="800"></canvas>

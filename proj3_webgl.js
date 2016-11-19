@@ -2,12 +2,19 @@
  * Initializing GL object
  */
 var gl;
-function initGL(canvas) {
-    try {
+
+var clothImage;
+var clothTexture;
+
+function initGL(canvas)
+{
+    try
+    {
         gl = canvas.getContext("experimental-webgl");
         gl.viewportWidth = canvas.width;
         gl.viewportHeight = canvas.height;
-    } catch (e) {
+    } catch (e)
+    {
     }
     if ( !gl ) alert("Could not initialise WebGL, sorry :-(");
 
@@ -19,13 +26,16 @@ function initGL(canvas) {
  * Initializing shaders 
  */
 var shaderProgram;
-function createShader(vs_id, fs_id) {
+function createShader(vs_id, fs_id)
+{
     var shaderProg = createShaderProg(vs_id, fs_id);
 
     shaderProg.vertexPositionAttribute = gl.getAttribLocation(shaderProg, "aVertexPosition");
     gl.enableVertexAttribArray(shaderProg.vertexPositionAttribute);
     shaderProg.vertexNormalAttribute = gl.getAttribLocation(shaderProg, "aVertexNormal");
-    gl.enableVertexAttribArray(shaderProg.vertexNormalAttribute);        
+    gl.enableVertexAttribArray(shaderProg.vertexNormalAttribute);
+    shaderProg.textureCoordAttribute = gl.getAttribLocation(shaderProg, "aTextureCoord");
+    gl.enableVertexAttribArray(shaderProg.textureCoordAttribute);
 
     shaderProg.pMatrixUniform = gl.getUniformLocation(shaderProg, "uPMatrix");
     shaderProg.mvMatrixUniform = gl.getUniformLocation(shaderProg, "uMVMatrix");
@@ -35,7 +45,8 @@ function createShader(vs_id, fs_id) {
     return shaderProg;
 }
 
-function initShaders() {
+function initShaders()
+{
     shaderProgram = createShader("shader-vs", "shader-fs");
     gl.useProgram(shaderProgram);    
 }
@@ -45,31 +56,41 @@ function initShaders() {
  * Initializing and updating buffers
  */
 var vertexPositionBuffer, vertexNormalBuffer, indexBuffer, wireIndexBuffer;
-function initBuffers(createBuffers) {
-    if ( createBuffers ) {
+var textureCoordBuffer;
+function initBuffers(createBuffers)
+{
+    if ( createBuffers )
+    {
         vertexPositionBuffer = gl.createBuffer();
         vertexNormalBuffer = gl.createBuffer();        
         indexBuffer = gl.createBuffer();
-        wireIndexBuffer = gl.createBuffer();        
+        wireIndexBuffer = gl.createBuffer();
+        textureCoordBuffer = gl.createBuffer();
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertexPosition), gl.DYNAMIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormalBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertexNormal), gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.DYNAMIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, Uint16Array.from(clothIndex), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wireIndexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, Uint16Array.from(clothWireIndex), gl.STATIC_DRAW);    
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, Uint16Array.from(clothWireIndex), gl.STATIC_DRAW);
 }
 
-function updateBuffers() {
+function updateBuffers()
+{
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertexPosition), gl.DYNAMIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormalBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertexNormal), gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesTextureCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.DYNAMIC_DRAW);
 }
 
-function resetMesh() {
+function resetMesh()
+{
     initMesh();
     initBuffers(false);
 }
@@ -91,7 +112,8 @@ var lightPos = vec3.create();                   // Camera-space position of the 
 var rotY = 0.3;                                 // object rotation
 var rotY_light = 0.0;                           // light position rotation
 
-function setUniforms() {
+function setUniforms()
+{
     gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
     gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
 
@@ -129,12 +151,21 @@ function drawScene() {
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormalBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, 3, gl.FLOAT, false, 0, 0);
 
-    if ( drawMode == 0 ) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
+    gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, 2, gl.FLOAT, false, 0, 0);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, clothTexture);
+    gl.uniform1i(gl.getUniformLocation(shaderProgram, "uSampler"), 0);
+
+    if ( drawMode == 0 )
+    {
         // Normal mode
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);        
         gl.drawElements(gl.TRIANGLES, clothIndex.length, gl.UNSIGNED_SHORT, 0);
     }
-    else {
+    else
+    {
         // Wire-frame mode
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wireIndexBuffer);        
         gl.drawElements(gl.LINES, clothWireIndex.length, gl.UNSIGNED_SHORT, 0);
@@ -145,11 +176,13 @@ var lastTime = 0;
 var rotSpeed = 60, rotSpeed_light = 60;
 var rotating = false, rotating_light = false;
 var animated = true;
-function tick() {
+function tick()
+{
     requestAnimationFrame(tick);
 
     var timeNow = new Date().getTime();
-    if ( lastTime != 0 ) {
+    if ( lastTime != 0 )
+    {
       var elapsed = timeNow - lastTime;
       if ( rotating )
         rotY += rotSpeed*0.0175*elapsed/1000.0;
@@ -160,7 +193,8 @@ function tick() {
 
     drawScene();
 
-    if ( animated ) {
+    if ( animated )
+    {
         var timeStep = 0.001;
         var n = Math.ceil(0.01/timeStep);
         for ( var i = 0; i < n; ++i ) simulate(timeStep);
@@ -169,7 +203,8 @@ function tick() {
     }
 }
 
-function webGLStart() {
+function webGLStart()
+{
     var canvas = $("#canvas0")[0];
 
     meshResolution = 25;
@@ -186,10 +221,41 @@ function webGLStart() {
     initMesh();
     initBuffers(true);
 
+    initTextures();
+
     gl.clearColor(0.3, 0.3, 0.3, 1.0);
     gl.enable(gl.DEPTH_TEST);
     gl.disable(gl.CULL_FACE);
     drawMode = 0;
 
     tick();
+}
+
+
+// texture
+function initTextures()
+{
+    clothTexture = gl.createTexture();
+    clothImage = new Image();
+    clothImage.onload = function() { handleTextureLoaded(clothImage, clothTexture); }
+    clothImage.src = "texture.PNG";
+}
+
+function handleTextureLoaded(image, texture)
+{
+    // console.log("handleTextureLoaded, image = " + image);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+    // gl.NEAREST is also allowed, instead of gl.LINEAR, as neither mipmap.
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    // Prevents s-coordinate wrapping (repeating).
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    // Prevents t-coordinate wrapping (repeating).
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.bindTexture(gl.TEXTURE_2D, null);
 }
