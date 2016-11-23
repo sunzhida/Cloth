@@ -7,7 +7,7 @@ var meshResolution;
 var mass;
 var vertexPosition, vertexNormal;
 var vertexVelocity;
-var textureCoordinates;
+var textureCoord;
 
 // Spring properties
 var K, restLength; 
@@ -20,10 +20,10 @@ var uf, Cv;
 /*
  * Getters and setters
  */
-
-function setTextureCoord(i, j, x) {
+function setTextureCoord(i, j, x)
+{
     var id = i*meshResolution + j;
-    textureCoordinates[2*id] = x[0]; textureCoordinates[2*id + 1] = x[1];
+    textureCoord[2*id] = x[0]; textureCoord[2*id + 1] = x[1];
 }
 
 function getPosition(i, j) {
@@ -60,7 +60,8 @@ function computeNormals() {
     var e1, e2;
     var i, j, k = 0, t;
     for ( i = 0; i < meshResolution; ++i )
-        for ( j = 0; j < meshResolution; ++j ) {
+        for ( j = 0; j < meshResolution; ++j )
+        {
             var p0 = getPosition(i, j), norms = [];
             for ( t = 0; t < 6; ++t ) {
                 var i1 = i + dy[t], j1 = j + dx[t];
@@ -90,7 +91,7 @@ function initMesh()
 
     vertexPosition = new Array(meshResolution*meshResolution*3);
     vertexNormal = new Array(meshResolution*meshResolution*3);
-    textureCoordinates = new Array(meshResolution*meshResolution*2);
+    textureCoord = new Array(meshResolution*meshResolution*2);
     clothIndex = new Array((meshResolution - 1)*(meshResolution - 1)*6);
     clothWireIndex = [];
 
@@ -102,7 +103,7 @@ function initMesh()
     for ( i = 0; i < meshResolution; ++i )
         for ( j = 0; j < meshResolution; ++j )
         {
-            setTextureCoord(i, j, [1.0*i/(meshResolution - 1), 1.0*j/(meshResolution - 1)]);
+            setTextureCoord(i, j, [1.0*j/(meshResolution - 1), 1.0*i/(meshResolution - 1)]);
             setPosition(i, j, [-2.0 + 4.0*j/(meshResolution - 1), -2.0 + 4.0*i/(meshResolution - 1), 0.0]);
             setVelocity(i, j, vec3.create());
 
@@ -305,7 +306,7 @@ function simulate(stepSize)
             vec3.add(Fdamping, F, F);
             vec3.add(Ffliud, F, F);
 
-            // test: add wind
+            // *add wind* to make it more interesting
             var wind = vec3.create([9.8*mass/2, 0, 9.8*mass/2]);
             vec3.add(wind, F, F);
 

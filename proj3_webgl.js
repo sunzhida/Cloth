@@ -26,6 +26,7 @@ function initGL(canvas)
  * Initializing shaders 
  */
 var shaderProgram;
+
 function createShader(vs_id, fs_id)
 {
     var shaderProg = createShaderProg(vs_id, fs_id);
@@ -72,7 +73,7 @@ function initBuffers(createBuffers)
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormalBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertexNormal), gl.DYNAMIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoord), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, Uint16Array.from(clothIndex), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wireIndexBuffer);
@@ -85,8 +86,8 @@ function updateBuffers()
     gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertexPosition), gl.DYNAMIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormalBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertexNormal), gl.DYNAMIC_DRAW);
-    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVerticesTextureCoordBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoord), gl.DYNAMIC_DRAW);
 }
 
 function resetMesh()
@@ -146,12 +147,15 @@ function drawScene() {
     setUniforms();
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertexPosition), gl.DYNAMIC_DRAW);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertexNormal), gl.DYNAMIC_DRAW);
     gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, 3, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoord), gl.DYNAMIC_DRAW);
     gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, 2, gl.FLOAT, false, 0, 0);
 
     gl.activeTexture(gl.TEXTURE0);
@@ -199,7 +203,7 @@ function tick()
         var n = Math.ceil(0.01/timeStep);
         for ( var i = 0; i < n; ++i ) simulate(timeStep);
         computeNormals();
-        updateBuffers();
+        // updateBuffers();
     }
 }
 
@@ -231,14 +235,13 @@ function webGLStart()
     tick();
 }
 
-
 // texture
 function initTextures()
 {
     clothTexture = gl.createTexture();
     clothImage = new Image();
     clothImage.onload = function() { handleTextureLoaded(clothImage, clothTexture); }
-    clothImage.src = "texture.PNG";
+    clothImage.src = "assets/texture.PNG";
 }
 
 function handleTextureLoaded(image, texture)
@@ -247,6 +250,7 @@ function handleTextureLoaded(image, texture)
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
+
     // gl.NEAREST is also allowed, instead of gl.LINEAR, as neither mipmap.
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     // Prevents s-coordinate wrapping (repeating).
@@ -254,8 +258,8 @@ function handleTextureLoaded(image, texture)
     // Prevents t-coordinate wrapping (repeating).
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    gl.bindTexture(gl.TEXTURE_2D, null);
+//     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+//     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+//     gl.generateMipmap(gl.TEXTURE_2D);
+//     gl.bindTexture(gl.TEXTURE_2D, null);
 }

@@ -5,7 +5,8 @@ function changeResolution(sel) {
     var id = parseInt(sel.value, 10);
 
     var width = 0, height = 0;
-    switch ( id ) {
+    switch ( id )
+    {
         case 0:
             width = 480; height = 640; break;
 
@@ -19,7 +20,8 @@ function changeResolution(sel) {
             alert("Unknown resolution!");
     }
 
-    if ( width > 0 ) {
+    if ( width > 0 )
+    {
         var canvas = $("#canvas0")[0];
         
         canvas.width = width; 
